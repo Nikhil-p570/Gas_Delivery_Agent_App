@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "757795730958",
+    "project_id": "vyomanew-47887",
+    "storage_bucket": "vyomanew-47887.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:757795730958:android:b2ee510b074cc03edb2e5f",
+        "android_client_info": {
+          "package_name": "com.example.delivery_agent_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKp1uMYzJfdRwn3LowNqNd-NDvwLmmfeM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:757795730958:android:5447c67ceffecfb0db2e5f",
+        "android_client_info": {
+          "package_name": "com.example.gas_delivery_admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKp1uMYzJfdRwn3LowNqNd-NDvwLmmfeM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:757795730958:android:83077678df207d01db2e5f",
+        "android_client_info": {
+          "package_name": "com.example.vyoma_new"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKp1uMYzJfdRwn3LowNqNd-NDvwLmmfeM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
