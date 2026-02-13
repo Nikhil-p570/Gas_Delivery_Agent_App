@@ -289,28 +289,40 @@ class _LoginScreenState extends State<LoginScreen> {
         }
         
         return Scaffold(
-          backgroundColor: const Color(0xFFFF6347),
-          body: Center(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Card(
-                  child: Container(
-                    width: 400,
-                    padding: const EdgeInsets.all(40),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
+          backgroundColor: const Color(0xFFF5F7FA),
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF1A237E),
+                  Color(0xFF3949AB),
+                  Color(0xFFC62828),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Center(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Card(
+                    child: Container(
+                      width: 400,
+                      padding: const EdgeInsets.all(40),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.red.shade50,
+                            color: const Color(0xFF1A237E).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.local_shipping_rounded,
                             size: 48,
-                            color: Colors.red.shade700,
+                            color: Color(0xFF1A237E),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -450,6 +462,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
+            ),
           ),
         );
       },
@@ -461,7 +474,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return ElevatedButton(
         onPressed: null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.orange.shade700,
+          backgroundColor: const Color(0xFF3949AB),
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -494,7 +507,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return ElevatedButton(
       onPressed: loading ? null : (otpSent ? verifyOtp : sendOtp),
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: const Color(0xFFFF6F00),
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),

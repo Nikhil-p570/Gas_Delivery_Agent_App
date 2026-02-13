@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'widgets/slide_to_confirm.dart';
 import '../utils/phone_utils.dart';
 
@@ -29,11 +30,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   Future<void> loadUserData() async {
     try {
-      // Get the uid from orderData - check both 'uid' and 'userId' fields
       final userUid = widget.orderData['uid'] ?? widget.orderData['userId'];
-      
       if (userUid != null) {
-        // Query users collection where uid = userUid
         final querySnapshot = await FirebaseFirestore.instance
             .collection('users')
             .where('uid', isEqualTo: userUid)
@@ -46,12 +44,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             loading = false;
           });
         } else {
-          // If not found, try old userId field
-          final doc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(userUid)
-              .get();
-            
+          final doc = await FirebaseFirestore.instance.collection('users').doc(userUid).get();
           if (doc.exists) {
             setState(() {
               userData = doc.data();
@@ -65,458 +58,315 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         setState(() => loading = false);
       }
     } catch (e) {
-      print("Error loading user data: $e");
+      debugPrint("Error loading user data: $e");
       setState(() => loading = false);
     }
   }
 
-  // Helper to format order type display
-  String _formatOrderType(String? orderType) {
-    if (orderType == null) return 'New Cylinder';
-    if (orderType == 'new_cylinder') return 'New Cylinder';
-    if (orderType == 'refill') return 'Refill';
-    return orderType.replaceAll('_', ' ').toTitleCase();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final productName = widget.orderData['productName'] ?? 'LPG Cylinder';
-    final qty = widget.orderData['quantity'] ?? 1;
-    final address = widget.orderData['address'] ?? 'No address provided';
-    final weight = widget.orderData['weight'] ?? 'N/A';
-    final price = widget.orderData['price'] ?? 0;
-    final area = widget.orderData['area'] ?? '';
-    final orderType = widget.orderData['orderType'] ?? 'new_cylinder';
-    final unitPrice = widget.orderData['unitPrice'] ?? 
-        (widget.orderData['price'] ?? 0) / (qty > 0 ? qty : 1);
-    
-    final formattedOrderType = _formatOrderType(orderType);
+    final d = widget.orderData;
+    final String status = d['status'] ?? d['orderStatus'] ?? 'pending';
+    final String address = d['address'] ?? 'No address';
+    final String area = d['area'] ?? '';
+    final String phone = d['phone'] ?? '';
+    final String displayUserName = d['userName'] ?? userData?['name'] ?? 'Customer';
+    final String deliverySlot = d['deliverySlot'] ?? 'Not specified';
+    final String deliveryType = d['deliveryType'] ?? 'Normal';
+    final String paymentMethod = d['paymentMethod'] ?? 'N/A';
+    final String gstNumber = d['gstNumber'] ?? 'N/A';
+    final double totalAmount = (d['totalAmount'] ?? d['price'] ?? 0).toDouble();
+    final List<dynamic> items = d['items'] ?? [];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
+        backgroundColor: Colors.white,
         title: const Text(
           "Order Details",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1A237E)),
         ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: Colors.grey.shade700),
+          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1A237E)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
+          : Stack(
               children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red.shade50,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Icon(
-                                        Icons.propane_tank_rounded,
-                                        color: Colors.red.shade700,
-                                        size: 32,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            productName,
-                                            style: const TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF1F2937),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            "Weight: $weight",
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.grey.shade600,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: orderType == 'new_cylinder' 
-                                                ? Colors.blue.shade50 
-                                                : Colors.green.shade50,
-                                              borderRadius: BorderRadius.circular(6),
-                                              border: Border.all(
-                                                color: orderType == 'new_cylinder'
-                                                  ? Colors.blue.shade200
-                                                  : Colors.green.shade200,
-                                                width: 1,
-                                              ),
-                                            ),
-                                            child: Text(
-                                              formattedOrderType,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: orderType == 'new_cylinder'
-                                                  ? Colors.blue.shade800
-                                                  : Colors.green.shade800,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                const Divider(),
-                                const SizedBox(height: 16),
-                                
-                                // Price breakdown
-                                Column(
-                                  children: [
-                                    // Unit price row
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          "$formattedOrderType Price",
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                        ),
-                                        Text(
-                                          "₹${unitPrice.toStringAsFixed(0)}",
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF1F2937),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    
-                                    // Quantity row
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          "Quantity",
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                        ),
-                                        Text(
-                                          "$qty",
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF1F2937),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    
-                                    // Divider
-                                    Divider(
-                                      color: Colors.grey.shade300,
-                                      height: 1,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    
-                                    // Total price row
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          "Total Price",
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.grey.shade800,
-                                          ),
-                                        ),
-                                        Text(
-                                          "₹$price",
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.red.shade700,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.person_rounded,
-                                      color: Colors.grey.shade700,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      "Customer Details",
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey.shade800,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-
-                                // Name field
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    SizedBox(
-                                      width: 100,
-                                      child: Text(
-                                        "Name",
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        userData?['name'] ?? 'Not available',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFF1F2937),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 12),
-
-                                // Phone field with call button
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    SizedBox(
-                                      width: 100,
-                                      child: Text(
-                                        "Phone",
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              userData?['phone'] ?? 'Not available',
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600,
-                                                color: Color(0xFF1F2937),
-                                              ),
-                                            ),
-                                          ),
-                                          // Call button - only if phone exists
-                                          if (userData?['phone'] != null && 
-                                              userData?['phone'] != 'Not available' &&
-                                              userData?['phone']!.isNotEmpty)
-                                            IconButton(
-                                              onPressed: () {
-                                                PhoneUtils.callCustomer(userData!['phone']!, context);
-                                              },
-                                              icon: Icon(
-                                                Icons.call, 
-                                                color: Colors.white,
-                                                size: 20,
-                                              ),
-                                              style: IconButton.styleFrom(
-                                                backgroundColor: const Color.fromARGB(255, 74, 151, 79), // <-- Background color here
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                              ),
-                                              tooltip: 'Call Customer',
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.location_on_rounded,
-                                      color: Colors.grey.shade700,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      "Delivery Details",
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey.shade800,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                // Area
-                                _buildDetailRow(
-                                  "Area",
-                                  area.isNotEmpty ? area : 'Not specified',
-                                ),
-                                const SizedBox(height: 12),
-                                
-                                // Address
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Address",
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade600,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade50,
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: Colors.grey.shade200,
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        address,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey.shade700,
-                                          height: 1.5,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                
-                                const SizedBox(height: 8),
-                                
-                                // Additional delivery info if available
-                                if (widget.orderData['deliverySlot'] != null) ...[
-                                  const SizedBox(height: 12),
-                                  _buildDetailRow(
-                                    "Delivery Slot",
-                                    widget.orderData['deliverySlot'].toString(),
-                                  ),
+                SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 120),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildOrderHeader(status, d['productName'] ?? (items.isNotEmpty ? 'Multiple Items' : 'Order')),
+                      if (items.isNotEmpty)
+                        _buildInfoSection(
+                          title: "Items",
+                          icon: Icons.shopping_basket_rounded,
+                          child: Column(
+                            children: [
+                              ...items.map((item) => _buildItemTile(item)).toList(),
+                              const Divider(height: 32),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text("Total Amount", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1F2937))),
+                                  Text("₹${totalAmount.toStringAsFixed(0)}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFFFF6F00))),
                                 ],
-                              ],
-                            ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        _buildInfoSection(
+                          title: "Product Info",
+                          icon: Icons.propane_tank_rounded,
+                          child: Column(
+                            children: [
+                              _buildItemTile({
+                                'name': d['productName'] ?? 'LPG Cylinder',
+                                'weight': d['weight'] ?? 'N/A',
+                                'price': d['price'] ?? 0,
+                                'quantity': d['quantity'] ?? 1,
+                              }),
+                              const Divider(height: 32),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text("Total Amount", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1F2937))),
+                                  Text("₹${totalAmount.toStringAsFixed(0)}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFFFF6F00))),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 100),
-                      ],
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, -5),
+                      _buildInfoSection(
+                        title: "Customer Details",
+                        icon: Icons.person_rounded,
+                        child: Column(
+                          children: [
+                            _buildDetailRow("Name", displayUserName),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(child: _buildDetailRow("Phone", phone)),
+                                if (phone.isNotEmpty)
+                                  IconButton(
+                                    onPressed: () => PhoneUtils.callCustomer(phone, context),
+                                    icon: const Icon(Icons.call, color: Colors.white, size: 20),
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: const Color(0xFF4CAF50),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      _buildInfoSection(
+                        title: "Delivery Location",
+                        icon: Icons.location_on_rounded,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildDetailRow("Area", area),
+                            const SizedBox(height: 12),
+                            Text(
+                              "Address",
+                              style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade200),
+                              ),
+                              child: Text(
+                                address,
+                                style: TextStyle(fontSize: 14, color: Colors.grey.shade700, height: 1.5),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  child: SlideToConfirm(
-                    onConfirm: () async {
-                      await FirebaseFirestore.instance
-                          .collection('orders')
-                          .doc(widget.orderId)
-                          .update({'orderStatus': 'delivered'});
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Order marked as delivered'),
-                          backgroundColor: Colors.red.shade700,
-                        ),
-                      );
-                    },
+                ),
+                if (status == 'assigned' || status == 'pending')
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
+                        ],
+                      ),
+                      child: SlideToConfirm(
+                        onConfirm: () async {
+                          final agentId = FirebaseAuth.instance.currentUser?.uid;
+                          final batch = FirebaseFirestore.instance.batch();
+                          
+                          batch.update(
+                            FirebaseFirestore.instance.collection('orders').doc(widget.orderId),
+                            {'orderStatus': 'completed', 'status': 'completed', 'completedAt': FieldValue.serverTimestamp()},
+                          );
+                          
+                          if (agentId != null) {
+                            batch.update(
+                              FirebaseFirestore.instance.collection('delivery_agents').doc(agentId),
+                              {
+                                'orderIDs': FieldValue.arrayRemove([widget.orderId]),
+                                'completed_orders': FieldValue.arrayUnion([widget.orderId]),
+                                'cylindersDeliveredToday': FieldValue.increment(1),
+                              },
+                            );
+                          }
+                          await batch.commit();
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Order marked as completed'), backgroundColor: Color(0xFFC62828)),
+                            );
+                          }
+                        },
+                      ),
+                    ),
                   ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildOrderHeader(String status, String title) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      color: Colors.white,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Order ID: #${widget.orderId.substring(widget.orderId.length > 8 ? widget.orderId.length - 8 : 0).toUpperCase()}",
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500, letterSpacing: 1),
                 ),
               ],
             ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: status == 'completed' ? Colors.green.shade50 : const Color(0xFF1A237E).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              status.toUpperCase(),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: status == 'completed' ? Colors.green.shade700 : const Color(0xFF1A237E),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoSection({required String title, required IconData icon, required Widget child}) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 20, color: const Color(0xFF1A237E)),
+                const SizedBox(width: 8),
+                Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1F2937))),
+              ],
+            ),
+            const SizedBox(height: 16),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildItemTile(Map<String, dynamic> item) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              image: item['imageUrl'] != null && item['imageUrl'].toString().isNotEmpty
+                  ? DecorationImage(image: NetworkImage(item['imageUrl']), fit: BoxFit.cover)
+                  : null,
+            ),
+            child: (item['imageUrl'] == null || item['imageUrl'].toString().isEmpty) 
+                ? const Icon(Icons.propane_tank_rounded, color: Color(0xFF1A237E)) 
+                : null,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item['name'] ?? 'Item',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
+                ),
+                Text(
+                  "Weight: ${item['weight'] ?? 'N/A'}",
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                "₹${item['price']}",
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFFFF6F00)),
+              ),
+              Text(
+                "Qty: ${item['quantity']}",
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -526,22 +376,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       children: [
         SizedBox(
           width: 100,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade600,
-            ),
-          ),
+          child: Text(label, style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
         ),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1F2937),
-            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
           ),
         ),
       ],

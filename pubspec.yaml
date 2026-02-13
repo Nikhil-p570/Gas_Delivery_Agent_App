@@ -25,6 +25,7 @@ dependencies:
 
   # 🌐 Utilities
   url_launcher: ^6.3.0
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
